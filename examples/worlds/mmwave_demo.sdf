@@ -1,0 +1,126 @@
+<?xml version="1.0" ?>
+<!--
+  mmwave_demo.sdf
+  ──────────────────────────────────────────────────────────────────────────────
+  Minimal Gazebo Sim 8 (Harmonic) world that demonstrates the
+  gazebo_mmwave_sensor plugin.
+
+  A simple scene:
+    • Ground plane
+    • A static box at (5, 0, 0.5) – will be hit by radar rays
+    • A moving sphere on a linear track (demonstrates radial-velocity != 0)
+    • The radar sensor attached to a model called "mmwave_radar"
+
+  Usage:
+    gz sim mmwave_demo.sdf
+
+  Then in a separate terminal (with ROS 2 Humble sourced):
+    ros2 topic echo /mmwave/points --no-arr
+-->
+<sdf version="1.10">
+  <world name="mmwave_demo_world">
+
+    <!-- ── Physics ──────────────────────────────────────────────────────── -->
+    <physics name="1ms" type="ignored">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+
+    <!-- Required Gazebo Sim plugins -->
+    <plugin filename="gz-sim-physics-system"
+            name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-user-commands-system"
+            name="gz::sim::systems::UserCommands"/>
+    <plugin filename="gz-sim-scene-broadcaster-system"
+            name="gz::sim::systems::SceneBroadcaster"/>
+
+    <!-- ── Lighting ─────────────────────────────────────────────────────── -->
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <direction>-0.5 0.1 -0.9</direction>
+    </light>
+
+    <!-- ── Ground plane ─────────────────────────────────────────────────── -->
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry><plane><normal>0 0 1</normal></plane></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><plane><normal>0 0 1</normal><size>100 100</size></plane></geometry>
+          <material><ambient>0.8 0.8 0.8 1</ambient></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ── Static obstacle (box at 5 m ahead) ──────────────────────────── -->
+    <model name="box_obstacle">
+      <static>true</static>
+      <pose>5 0 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>1 1 1</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>1 1 1</size></box></geometry>
+          <material><ambient>0.2 0.6 0.2 1</ambient></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ── mmWave radar model ────────────────────────────────────────────── -->
+    <!--
+      The sensor is attached at the origin.
+      The plugin is a model-level System plugin.
+      Adjust v_min / v_max to match what you pass to mmwave_colorizer.
+    -->
+    <model name="mmwave_radar">
+      <static>true</static>
+      <pose>0 0 0.5 0 0 0</pose>
+
+      <link name="mmwave_link">
+        <!-- Tiny visual representation of the radar -->
+        <visual name="visual">
+          <geometry>
+            <box><size>0.1 0.05 0.02</size></box>
+          </geometry>
+          <material><ambient>0.1 0.1 0.8 1</ambient></material>
+        </visual>
+      </link>
+
+      <!--
+        gazebo_mmwave_sensor plugin
+        All parameters are optional – defaults match those listed in the header.
+      -->
+      <plugin
+        filename="libgazebo_mmwave_sensor.so"
+        name="gazebo_mmwave_sensor::MmwaveSensorPlugin">
+
+        <topic>/mmwave/points</topic>
+        <frame_id>mmwave_link</frame_id>
+        <update_rate>10</update_rate>
+
+        <min_range>0.2</min_range>
+        <max_range>50.0</max_range>
+
+        <h_fov>2.094</h_fov>   <!-- ~120 deg -->
+        <v_fov>0.349</v_fov>   <!-- ~20 deg  -->
+        <num_rays_h>256</num_rays_h>
+        <num_rays_v>16</num_rays_v>
+
+        <range_noise_std>0.02</range_noise_std>
+
+        <!-- Fixed velocity colour range – must match mmwave_colorizer params -->
+        <v_min>-10.0</v_min>
+        <v_max>10.0</v_max>
+
+        <debug_draw_rays>false</debug_draw_rays>
+      </plugin>
+    </model>
+
+  </world>
+</sdf>

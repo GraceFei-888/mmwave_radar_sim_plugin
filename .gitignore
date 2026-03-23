@@ -1,0 +1,23 @@
+# ROS 2 / colcon build artefacts
+build/
+install/
+log/
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+*.cmake
+Makefile
+
+# Compiled libraries / executables
+*.so
+*.a
+*.o
+*.pyc
+__pycache__/
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*~
