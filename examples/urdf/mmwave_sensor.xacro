@@ -1,0 +1,78 @@
+<?xml version="1.0"?>
+<!--
+  mmwave_sensor.xacro
+  ──────────────────────────────────────────────────────────────────────────────
+  Xacro macro that inserts the gazebo_mmwave_sensor Gazebo Sim 8 plugin into a
+  URDF model.
+
+  Usage example (in your robot's main xacro file):
+
+    <xacro:include filename="$(find gazebo_mmwave_sensor)/urdf/mmwave_sensor.xacro"/>
+
+    <!-- Mount sensor on base_link at 0.2 m forward, 0.3 m up -->
+    <xacro:mmwave_gz_plugin
+      parent_link="base_link"
+      frame_id="mmwave_link"
+      v_min="-10.0"
+      v_max="10.0" />
+
+  Notes:
+  - The URDF must also declare the joint+link for "mmwave_link" (not done here).
+  - After URDF→SDF conversion the <plugin> element will appear inside the
+    <model> element which Gazebo Sim 8 expects for System plugins.
+-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:macro name="mmwave_gz_plugin"
+               params="
+                 parent_link
+                 topic:=/mmwave/points
+                 frame_id:=mmwave_link
+                 update_rate:=10
+                 min_range:=0.2
+                 max_range:=50.0
+                 h_fov:=2.094
+                 v_fov:=0.349
+                 num_rays_h:=256
+                 num_rays_v:=16
+                 range_noise_std:=0.02
+                 v_min:=-10.0
+                 v_max:=10.0
+                 debug_draw_rays:=false">
+
+    <!--
+      The <gazebo reference="..."> block will be merged into the matching link
+      element when URDF is converted to SDF by gz sdf -p.
+      System plugins must be under the <model> element; to achieve this with
+      URDF we reference the root link so the converter places it at model level.
+    -->
+    <gazebo reference="${parent_link}">
+      <plugin
+        filename="libgazebo_mmwave_sensor.so"
+        name="gazebo_mmwave_sensor::MmwaveSensorPlugin">
+
+        <topic>${topic}</topic>
+        <frame_id>${frame_id}</frame_id>
+        <update_rate>${update_rate}</update_rate>
+
+        <min_range>${min_range}</min_range>
+        <max_range>${max_range}</max_range>
+
+        <h_fov>${h_fov}</h_fov>
+        <v_fov>${v_fov}</v_fov>
+        <num_rays_h>${num_rays_h}</num_rays_h>
+        <num_rays_v>${num_rays_v}</num_rays_v>
+
+        <range_noise_std>${range_noise_std}</range_noise_std>
+
+        <!-- Fixed velocity range for colour mapping – must match colorizer -->
+        <v_min>${v_min}</v_min>
+        <v_max>${v_max}</v_max>
+
+        <debug_draw_rays>${debug_draw_rays}</debug_draw_rays>
+      </plugin>
+    </gazebo>
+
+  </xacro:macro>
+
+</robot>
